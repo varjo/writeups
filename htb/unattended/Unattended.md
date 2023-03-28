@@ -17,7 +17,7 @@
 		- [User to Root Via Initrd Hardcoded Credentials](#user-to-root-via-initrd-hardcoded-credentials)
 - [Conclusion](#conclusion)
 ## Overview 
-Unattended is a Linux box rated as medium difficulty that requires many advanced techniques to compromise. Our initial major foothold is a SQL injection vulnerability, that leads to a local file inclusion, escalating to remote code execution. Once on the box and establish a user session, we discover credentials in an initrd image, which leads to obtaining root privileges.
+Unattended is a Linux box rated as medium difficulty that requires many advanced techniques to compromise. Our initial major foothold is a series SQL injection vulnerabilities, that lead to a local file inclusion, escalating to remote code execution. Once on the box and establish a user session, we discover credentials in an initrd image, which leads to obtaining root privileges.
 
 ### Tools
 - [nmap](https://nmap.org/)
