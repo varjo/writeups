@@ -10,7 +10,7 @@
 	- [Exploitation](#exploitation)
 		- [Nginx off-by-slash path normalization](#nginx-off-by-slash-path-normalization)
 		- [SQL Injection in index.php](#sql-injection-in-indexphp)
-		- [SQL Injection to Local File Inclusion](#sql-injection-to-local-file-inclusion)
+		- [2nd Order SQL Injection to Local File Inclusion](#2nd-order-sql-injection-to-local-file-inclusion)
 		- [Local File Inclusion to Remote Code Execution](#local-file-inclusion-to-remote-code-execution)
 		- [Local File Inclusion to Shell](#local-file-inclusion-to-shell)
 		- [Privilege Escalation to User](#privilege-escalation-to-user)
@@ -103,7 +103,7 @@ Injecting `25 or '1' = '2` yields a slightly different response, a good indicati
 
 This SQLi can be automated with SQL map to extract further data, but it defaults to a timing based attack and is slow. Further enumeration revealed that database contents were not useful at this time. 
 
-### SQL Injection to Local File Inclusion 
+### 2nd Order SQL Injection to Local File Inclusion 
 
 Going back to the source code of `index.php`, we observe how a page name is returned from a given id in `getTplFromID`:
 ```
