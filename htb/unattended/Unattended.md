@@ -502,5 +502,5 @@ With that, we have root!
 ![](pictures/root.png)
 
 # Conclusion
-This box served much more of a challenge than the "medium" difficulty rating. From the 2nd order SQL injection to LFI chain, to diving into reverse engineering initrd scripts. Many hours and dead ends were discovered along the way. 
+This box served much more of a challenge than the "medium" difficulty rating. From the 2nd order SQL injection to LFI chain, to obscure script references in a SQL database, and finally hardcoded credentials in an initrd image. This box presents many learning opportunities for targeting a semi-realistic and highly custom environment. 
 
