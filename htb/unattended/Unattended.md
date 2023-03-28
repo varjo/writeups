@@ -1,6 +1,15 @@
 # Hack The Box - Unattended
 ## Overview 
-Unattended is a medium rated difficulty linux box that requires many advanced techniques to compromise. Our initial major foothold is a SQL injection vulnerability, that leads to a local file inclusion, escalating to remote code execution. Once on the box we discover credentials in an initial ramdisk image, which leads to obtaining root privileges. 
+Unattended is a linux box rated as medium difficulty that requires many advanced techniques to compromise. Our initial major foothold is a SQL injection vulnerability, that leads to a local file inclusion, escalating to remote code execution. Once on the box we discover credentials in an initrd image, which leads to obtaining root privileges.
+
+### Tools used
+- [nmap](https://nmap.org/)
+- [gobuster](https://github.com/OJ/gobuster)
+- [wappalyzer](https://www.wappalyzer.com/)
+- [sqlmap](https://sqlmap.org/)
+- [burpsuite](https://portswigger.net/burp)
+- [Metasploit](https://www.metasploit.com/)
+- [socat](https://linux.die.net/man/1/socat)
 
 ## Initial Enumeration 
 ### Nmap
@@ -8,25 +17,27 @@ We start our enumeration with an nmap scan against the target machine
 
 ![](pictures/initial_nmap.png)
 
-Ports 80 and 443 are the only ones open. Take note of the ssl cert common name `www.nestedflanders.htb` this is a potential virtual host name that needs to be enumerated.
+Ports 80 and 443 are the only ports open. Take note of the ssl cert common name `www.nestedflanders.htb` this is a potential virtual host name that needs to be enumerated. Adding this entry to our `/etc/hosts` file will aid in testing. 
 
 ### Web
-Browsing to both ports by IP yields no results, but `https://www.nestedflanders.htb` yields an Apache2 Debian landing page; we will continue to use this vhost for future enumeration. An interesting note is that Wappalyzer claims thoe host is running `Nginx 1.10.3` despite the Apache2 landing page. 
+Browsing to both ports by IP yields no results, but `https://www.nestedflanders.htb` yields an Apache2 Debian landing page; we will continue to use this vhost for future enumeration. An interesting note is that Wappalyzer claims the host is running `Nginx 1.10.3` despite the Apache2 landing page. 
 
 ![](pictures/Screenshot_2023-03-27_13_10_48.png)
 
-We will use `gobuster` to brute force directories against this vhost.
+Manually browsing the site yields no more results. We will use `gobuster` to brute force directories against `www.nestedflanders.htb`.
 
 ![](pictures/gobuster.png)
 
-Gobuster discovers the existence of `/index.php` and `/dev`. Browsing to `/index.php` reveals a custom web page for "Nested Flanders' Portfolio". Navigating to links on this page takes us to various `index.php?id=ID`, a parameter worth investigating shortly. 
+Gobuster discovers the existence of `/index.php` and `/dev`. Browsing to `/index.php` reveals a custom web page for "Nested Flanders' Portfolio". Navigating to links on this page takes us to different`index.php?id=ID` pages, the `ID` parameter is worth investigating shortly. 
 
 ![](pictures/main_page.png)
 
 The `/dev/` directory has a plaintext message "dev site has been moved to his own server". 
 
+## Exploitation
+
 ## Nginx off-by-slash path normalization 
-Following our note earlier about the `Nginx` wappalyzer result, it is worth playing with how paths are normalized. The [Nginx off-by-slash](https://blog.detectify.com/2020/11/10/common-nginx-misconfigurations/) bug was found to be applicable here. Browsing to `https://www.nestedflanders.htb/dev../` results in a `403 forbidden`, going further up the directory stack to `https://www.nestedflanders.htb/dev../html/index.php` allows us to download the source of `index.php`. 
+Following our note earlier about the `Nginx` wappalyzer result, it is worth playing with how paths are normalized. The [Nginx off-by-slash](https://blog.detectify.com/2020/11/10/common-nginx-misconfigurations/) bug was found to be applicable here. Browsing to `https://www.nestedflanders.htb/dev../` results in a `403 forbidden`, going further up the directory tree to `https://www.nestedflanders.htb/dev../html/index.php` allows us to download the source of `index.php`. 
 
 ## SQL Injection in index.php
 
