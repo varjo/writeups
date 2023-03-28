@@ -1,8 +1,25 @@
 # Hack The Box - Unattended
+## Table of Contents
+- [Hack The Box - Unattended](#hack-the-box---unattended)
+	- [Table of Contents](#table-of-contents)
+	- [Overview](#overview)
+		- [Tools](#tools)
+	- [Initial Enumeration](#initial-enumeration)
+		- [Nmap](#nmap)
+		- [Web](#web)
+	- [Exploitation](#exploitation)
+		- [Nginx off-by-slash path normalization](#nginx-off-by-slash-path-normalization)
+		- [SQL Injection in index.php](#sql-injection-in-indexphp)
+		- [SQL Injection to Local File Inclusion](#sql-injection-to-local-file-inclusion)
+		- [Local File Inclusion to Remote Code Execution](#local-file-inclusion-to-remote-code-execution)
+		- [LFI to Shell](#lfi-to-shell)
+		- [Privilege Escalation to User](#privilege-escalation-to-user)
+		- [User to Root Via Initrd Hardcoded Credentials](#user-to-root-via-initrd-hardcoded-credentials)
+- [Conclusion](#conclusion)
 ## Overview 
 Unattended is a linux box rated as medium difficulty that requires many advanced techniques to compromise. Our initial major foothold is a SQL injection vulnerability, that leads to a local file inclusion, escalating to remote code execution. Once on the box we discover credentials in an initrd image, which leads to obtaining root privileges.
 
-### Tools used
+### Tools
 - [nmap](https://nmap.org/)
 - [gobuster](https://github.com/OJ/gobuster)
 - [wappalyzer](https://www.wappalyzer.com/)
@@ -36,10 +53,10 @@ The `/dev/` directory has a plaintext message "dev site has been moved to his ow
 
 ## Exploitation
 
-## Nginx off-by-slash path normalization 
+### Nginx off-by-slash path normalization 
 Following our note earlier about the `Nginx` wappalyzer result, it is worth playing with how paths are normalized. The [Nginx off-by-slash](https://blog.detectify.com/2020/11/10/common-nginx-misconfigurations/) bug was found to be applicable here. Browsing to `https://www.nestedflanders.htb/dev../` results in a `403 forbidden`, going further up the directory tree to `https://www.nestedflanders.htb/dev../html/index.php` allows us to download the source of `index.php`. 
 
-## SQL Injection in index.php
+### SQL Injection in index.php
 
 In the source of `index.php` we find many interesting things. Immediately we find database credentials that will be useful later: 
 ```
@@ -71,7 +88,7 @@ Injecting `25 or '1' = '2` yields a slightly different response:
 
 This SQLi can be automated with SQL map to extract further data, but it defaults to a timing based attack and is slow. Further enumeration revealed that database contents were not useful at this time. 
 
-## SQL Injection to Local File Inclusion 
+### SQL Injection to Local File Inclusion 
 
 Going back to the source code of `index.php`, we observe how a page name is returned from a given id in `getTplFromID`:
 ```
@@ -124,7 +141,7 @@ After some time fuzzing with payloads, the following was found to yield results 
 
 ![](pictures/lfi_etcpasswd.png)
 
-# Local File Inclusion to Remote Code Execution
+### Local File Inclusion to Remote Code Execution
 
 Since this LFI is exploited in the context of an `include()` call, we need a way to get our own php code into a system file. Our session file at `var/lib/php/session/sess_[SESSION COOKIE]` can be used to perform this. The session cookie value can be found in any HTTP request:
 ```
@@ -176,7 +193,7 @@ PHPSESSID|s:26:"0eeec3brj9f8bs109u6ssli5p3";EXEC|s:27:"=www-data
 ```
 By creating an `EXEC` cookie and smuggling `<?php passthru('whoami')?>;` in it, we are able to see we are running arbitrary commands as `www-data`.
 
-## LFI to stable shell
+### LFI to Shell
 With RCE established, we will create PHP meterpreter shell and execute it on the target.
 
 Create a meterpreter shell
@@ -230,7 +247,7 @@ After a few tries, we now how a meterpreter shell as `www-data`
 
 ![](pictures/shell_init.png)
 
-## Privilege Escalation to User
+### Privilege Escalation to User
 
 With our `www-data` shell, we find that there is only one other user on the box: `guly`. Permissions are locked down and there is not much that can be done here. 
 
@@ -371,7 +388,7 @@ msf6 exploit(multi/handler) > run
 meterpreter > 
 ```
 
-## User to root via initrd 
+### User to Root Via Initrd Hardcoded Credentials 
 
 With our `guly` user session, we need to begin enumerating methods for local privilege escalation. Our user is part of the `grub` group, which is of interest. Searching for files that are part of this group
 ```
